@@ -22,6 +22,14 @@ const produtos = require('./produtos.js');  // Importando o arquivo de produtos
 
 const userStates = {};
 const cart = {};
+const CONTACT_NUMBERS = {
+    //BRENO: '558192708196@c.us',
+    ZELTSER: '5581999711117@c.us',
+    //UEIBE: '558181427917@c.us',
+    //BELA: '558184119649@c.us',
+    //JACK: '558184636954@c.us'
+};
+
 
 client.on('qr', (qr) => {
     qrcode.generate(qr,{small:true});
@@ -37,6 +45,13 @@ client.on('message', message => {
     
     // Agora o bot responde a todos os contatos
     handleIncomingMessage(message); 
+
+    // Se você ainda quiser manter logs sobre mensagens de contatos específicos
+    if (Object.values(CONTACT_NUMBERS).includes(from)) {
+        console.log(`Mensagem de um contato conhecido: ${from}`);
+    } else {
+        console.log(`Mensagem de um contato desconhecido: ${from}`);
+    }
 });
 
 function handleIncomingMessage(message) {
