@@ -1,15 +1,24 @@
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
-const produtos = require('./produtos.js');  // Importando o arquivo de produtos
 
-const client = new Client({
-    authStrategy: new LocalAuth(),
-    puppeteer: {
-        headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox'],
-    },
-    webCache: false  // Desativa o cache local
-});
+exports.handler = async function(event, context) {
+  const client = new Client({
+    authStrategy: new LocalAuth()
+  });
+
+  client.on('qr', qr => {
+    qrcode.generate(qr, { small: true });
+  });
+
+  client.on('ready', () => {
+    console.log('Client is ready!');
+  });
+
+  client.initialize();
+
+  const { Client, LocalAuth } = require('whatsapp-web.js');
+const qrcode = require('qrcode-terminal');
+const produtos = require('./produtos.js');  // Importando o arquivo de produtos
 
 const userStates = {};
 const cart = {};
@@ -196,3 +205,9 @@ function capitalizeFirstLetter(string) {
 }
 
 client.initialize();
+
+  return {
+    statusCode: 200,
+    body: JSON.stringify({ message: 'Bot is running!' })
+  };
+};
