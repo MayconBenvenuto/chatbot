@@ -15,7 +15,7 @@ const userStates = {};
 const cart = {};
 const CONTACT_NUMBERS = {
     //BRENO: '558192708196@c.us',
-    ZELTSER: '5581999711117@c.us',
+    ZELTSER: '5581999711117@c.us', // só responde zeltser
     //UEIBE: '558181427917@c.us',
     //BELA: '558184119649@c.us',
     //JACK: '558184636954@c.us'
