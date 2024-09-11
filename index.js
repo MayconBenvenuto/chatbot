@@ -1,50 +1,59 @@
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
-const produtos = require('./produtos.js');  // Importando o arquivo de produtos
+const produtos = require('./produtos.js');  
 
+/**
+ * Configura e inicializa o cliente do WhatsApp.
+ * 
+ * @constant {Client} client - Instância do cliente WhatsApp.
+ */
 const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: {
         headless: true,
         args: ['--no-sandbox', '--disable-setuid-sandbox'],
     },
-    webCache: false  // Desativa o cache local
+    webCache: false  
 });
 
-const userStates = {};
-const cart = {};
-const CONTACT_NUMBERS = {
-    //BRENO: '558192708196@c.us',
-    ZELTSER: '5581999711117@c.us', // só responde zeltser
-    //UEIBE: '558181427917@c.us',
-    //BELA: '558184119649@c.us',
-    //JACK: '558184636954@c.us'
-};
+const userStates = {}; // Estados do usuário
+const cart = {}; // Carrinho de compras
 
-
+/**
+ * Gera e exibe o QR Code para autenticação.
+ * 
+ * @event Client#qr
+ * @param {string} qr - QR Code em formato de string.
+ */
 client.on('qr', (qr) => {
-    qrcode.generate(qr,{small:true});
+    qrcode.generate(qr, { small: true });
     console.log('Escaneie o QR Code acima para autenticar seu WhatsApp.');
 });
 
+/**
+ * Evento acionado quando o cliente está pronto e conectado.
+ * 
+ * @event Client#ready
+ */
 client.on('ready', () => {
     console.log('Bot está pronto e conectado!');
 });
 
+/**
+ * Manipula mensagens recebidas e direciona para o tratamento adequado com base no estado do usuário.
+ * 
+ * @param {Message} message - Mensagem recebida.
+ */
 client.on('message', message => {
     const from = message.from;
-    
-    // Agora o bot responde a todos os contatos
-    handleIncomingMessage(message); 
-
-    // Se você ainda quiser manter logs sobre mensagens de contatos específicos
-    if (Object.values(CONTACT_NUMBERS).includes(from)) {
-        console.log(`Mensagem de um contato conhecido: ${from}`);
-    } else {
-        console.log(`Mensagem de um contato desconhecido: ${from}`);
-    }
+    handleIncomingMessage(message); // Responde a qualquer mensagem recebida
 });
 
+/**
+ * Processa a mensagem recebida com base no estado do usuário.
+ * 
+ * @param {Message} message - Mensagem recebida.
+ */
 function handleIncomingMessage(message) {
     try {
         const userId = message.from;
@@ -81,16 +90,27 @@ function handleIncomingMessage(message) {
     }
 }
 
+/**
+ * Manipula o estado inicial do usuário.
+ * 
+ * @param {Message} message - Mensagem recebida.
+ * @param {string} text - Texto da mensagem.
+ * @param {string} userId - ID do usuário.
+ */
 function handleInitialState(message, text, userId) {
-    if (text === 'oi'||'bom dia'||'boa tarde') {
+    if (text === 'oi' || text === 'bom dia' || text === 'boa tarde') {
         userStates[userId] = 'greeted';
         sendInitialGreeting(message);
     } else {
-        //message.reply('Por favor, diga "oi" para começar.');
-        sendInitialGreeting(message)
+        sendInitialGreeting(message);
     }
 }
 
+/**
+ * Envia a mensagem de boas-vindas para o usuário.
+ * 
+ * @param {Message} message - Mensagem recebida.
+ */
 function sendInitialGreeting(message) {
     const welcomeMessage = `🥩 *Bem-vindo ao Açougue do Benício!* 🥩
 Por favor, escolha uma das opções abaixo:
@@ -103,6 +123,13 @@ Digite o número correspondente à sua escolha e nós estaremos prontos para ate
     message.reply(welcomeMessage);
 }
 
+/**
+ * Manipula a seleção de menu feita pelo usuário.
+ * 
+ * @param {Message} message - Mensagem recebida.
+ * @param {string} text - Texto da mensagem.
+ * @param {string} userId - ID do usuário.
+ */
 function handleMenuSelection(message, text, userId) {
     switch (text) {
         case '1':
@@ -122,6 +149,13 @@ function handleMenuSelection(message, text, userId) {
     }
 }
 
+/**
+ * Exibe o menu de produtos de uma categoria.
+ * 
+ * @param {Message} message - Mensagem recebida.
+ * @param {string} category - Categoria de produtos.
+ * @param {string} userId - ID do usuário.
+ */
 function displayMenu(message, category, userId) {
     let menu = `*${capitalizeFirstLetter(category)}:* \n`;
     produtos[category].forEach(produto => {
@@ -131,6 +165,14 @@ function displayMenu(message, category, userId) {
     userStates[userId] = `choosing_${category}`;
 }
 
+/**
+ * Manipula a seleção de produtos feita pelo usuário.
+ * 
+ * @param {Message} message - Mensagem recebida.
+ * @param {string} text - Texto da mensagem.
+ * @param {string} userId - ID do usuário.
+ * @param {string} categoryState - Estado da categoria.
+ */
 function handleProductSelection(message, text, userId, categoryState) {
     const category = categoryState.split('_')[1];
     const selectedProduct = produtos[category].find(produto => produto.id == text);
@@ -144,6 +186,12 @@ function handleProductSelection(message, text, userId, categoryState) {
     }
 }
 
+/**
+ * Adiciona um produto ao carrinho do usuário.
+ * 
+ * @param {string} userId - ID do usuário.
+ * @param {Object} product - Produto a ser adicionado.
+ */
 function addToCart(userId, product) {
     if (!cart[userId]) {
         cart[userId] = [];
@@ -151,6 +199,12 @@ function addToCart(userId, product) {
     cart[userId].push(product);
 }
 
+/**
+ * Exibe o conteúdo do carrinho do usuário.
+ * 
+ * @param {Message} message - Mensagem recebida.
+ * @param {string} userId - ID do usuário.
+ */
 function viewCart(message, userId) {
     if (!cart[userId] || cart[userId].length === 0) {
         message.reply('Seu carrinho está vazio.');
@@ -170,6 +224,13 @@ function viewCart(message, userId) {
     userStates[userId] = 'viewingCart';
 }
 
+/**
+ * Manipula a opção de carrinho do usuário.
+ * 
+ * @param {Message} message - Mensagem recebida.
+ * @param {string} text - Texto da mensagem.
+ * @param {string} userId - ID do usuário.
+ */
 function handleCartOption(message, text, userId) {
     const normalizedText = text.trim().toLowerCase();
     
@@ -188,6 +249,13 @@ function handleCartOption(message, text, userId) {
     }
 }
 
+/**
+ * Manipula a etapa de pagamento.
+ * 
+ * @param {Message} message - Mensagem recebida.
+ * @param {string} text - Texto da mensagem.
+ * @param {string} userId - ID do usuário.
+ */
 function handlePayment(message, text, userId) {
     const normalizedText = text.trim().toLowerCase();
     
@@ -202,10 +270,21 @@ function handlePayment(message, text, userId) {
     }
 }
 
+/**
+ * Reseta o estado do usuário para o estado inicial.
+ * 
+ * @param {string} userId - ID do usuário.
+ */
 function resetUserState(userId) {
     userStates[userId] = 'initial';
 }
 
+/**
+ * Capitaliza a primeira letra de uma string.
+ * 
+ * @param {string} string - String a ser capitalizada.
+ * @returns {string} - String com a primeira letra em maiúscula.
+ */
 function capitalizeFirstLetter(string) {
     return string.charAt(0).toUpperCase() + string.slice(1);
 }
